@@ -31,16 +31,14 @@ library(ggVennDiagram)
 ```
 
 ```{r,echo=FALSE,include=FALSE}
-#set disease name
+#import previous search result
 
-disease_data<-readRDS("data/gwas_list.RDS")
+disease_data<-readRDS("data/search_result/gwas_list.RDS")
+HPA_data<-readRDS('data/search_result/HPA_data.RDS')
 
-HPA_data<-readRDS('data/HPA_data.RDS')
-
+#import UMAP data and classification
 UMAP_data<-read.delim('data/UMAP_and_cluster.txt',sep = "\t", header=TRUE)
-
 HPA_classification<-read.table('data/HPA_classification.xls',sep = "\t", header=TRUE)
-
 HPA_classification_SC<-read.table('data/HPA_classification_SC.xls',sep = "\t", header=TRUE)
 
 #read dictionary
@@ -49,8 +47,7 @@ cluster_dict_sc<-read.csv("data/cluster_dict_sc.csv")
 cluster_dict_tissue<-read.csv("data/cluster_dict_tissue.csv")
 
 #other UMAP coord
-UMAP_coord<-fread('/Users/labrat/Downloads/expression_cluster.tsv')
-
+#UMAP_coord<-fread('/Users/labrat/Downloads/expression_cluster.tsv')
 ```
 
 ```{r,echo=FALSE,include=FALSE}

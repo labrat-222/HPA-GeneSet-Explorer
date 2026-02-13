@@ -21,13 +21,16 @@ source("functions.R")
 ## PART A – GWAS search: get gene list and basic filtering
 ############################################################
 
-# 1. Search traits (to inspect relevant EFO IDs if needed)
-#all_traits <- get_traits() #see all traits and EFO ID available
+#(note:Skip to part B if you want to import your own gene list)
+
+# 1. Search traits 
+all_traits <- get_traits() #see all traits and EFO ID available
 
 #type in key words to search relevant traits (optional)
 dplyr::filter(all_traits@traits, grepl("Alzheimer", trait, ignore.case = TRUE))
 
 # 2. Search GWAS for selected traits / EFO IDs
+## use relevant EFO trait id as query to search (might take a while)
 efo_ids <-c("EFO_0006514","EFO_0006801","MONDO_0004975","EFO_1001870","EFO_0009268","OBA_2001000","EFO_0022957")
 result_gwas <- search_gwasrapidd(efo_id = efo_ids)
 nrow(result_gwas)
@@ -55,7 +58,8 @@ nrow(result_gwas_unique)
 # 5. Save gene list with search term as metadata (optional, for record)
 attr(result_gwas_unique, "search_efo_meta") <- efo_meta
 attr(result_gwas_unique, "search_date")   <- Sys.time()
-saveRDS(result_gwas_unique, "data/gwas_list.RDS")
+dir.create("data/search_result")
+saveRDS(result_gwas_unique, "data/search_result/gwas_list.RDS")
 
 ############################################################
 ## PART B – Use risk gene list to query HPA and fetch data
@@ -68,14 +72,12 @@ dim(gene_list)
 
 ########## Database search in HPA ##########
 #choose which version of HPA to search
-
 #path <- "https://www.proteinatlas.org/api/search_download.php"
 path<-'https://v24.proteinatlas.org/api/search_download.php'
-# Unique Ensembl IDs
+
+
 search_queries <- unique(gene_list$ensembl_id)
-
 all_data <- list()
-
 for (search_query in search_queries) {
   req <- GET(
     url   = path,
@@ -124,7 +126,7 @@ attr(filtered_result, "search_date")     <- Sys.time()
 attr(filtered_result, "HPA_version") <- path
 
 # Save final HPA data with metadata included
-saveRDS(filtered_result, "data/HPA_data.RDS")
+saveRDS(filtered_result, "data/search_result/HPA_data.RDS")
 
 # write.table(filtered_result, "data/HPA_data.txt",
 #             sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
