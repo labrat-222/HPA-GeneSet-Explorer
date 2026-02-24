@@ -243,7 +243,7 @@ run_fisher_test <- function(
       },
       .groups = "drop"
     ) %>%
-    filter(fisher_p < p_threshold)
+    filter(fisher_p <= p_threshold)
   
   # Translate cluster IDs to names
   result <- result %>%
