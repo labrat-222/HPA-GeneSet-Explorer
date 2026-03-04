@@ -30,8 +30,13 @@ all_traits <- get_traits() #see all traits and EFO ID available
 dplyr::filter(all_traits@traits, grepl("Alzheimer", trait, ignore.case = TRUE))
 
 # 2. Search GWAS for selected traits / EFO IDs
+AD_id<-c("EFO_0006514","EFO_0006801","MONDO_0004975","EFO_1001870","EFO_0009268","OBA_2001000","EFO_0022957")
+DLB_id<-c('EFO_0006792','EFO_0006799','MONDO_0005180','EFO_0600011','OBA_2001009','HP_0001300','MONDO_0010747')
+FTD_id<-c('MONDO_0017276','OBA_2001022','EFO_0001357','MONDO_0004976','OBA_2001018')
+
 ## use relevant EFO trait id as query to search (might take a while)
-efo_ids <-c("EFO_0006514","EFO_0006801","MONDO_0004975","EFO_1001870","EFO_0009268","OBA_2001000","EFO_0022957")
+
+efo_ids <-FTD_id
 result_gwas <- search_gwasrapidd(efo_id = efo_ids)
 nrow(result_gwas)
 
@@ -58,8 +63,8 @@ nrow(result_gwas_unique)
 # 5. Save gene list with search term as metadata (optional, for record)
 attr(result_gwas_unique, "search_efo_meta") <- efo_meta
 attr(result_gwas_unique, "search_date")   <- Sys.time()
-dir.create("data/search_result")
-saveRDS(result_gwas_unique, "data/search_result/gwas_list.RDS")
+#dir.create("data/search_result")
+saveRDS(result_gwas_unique, "data/search_result/gwas_list_FTD.RDS")
 
 ############################################################
 ## PART B – Use risk gene list to query HPA and fetch data

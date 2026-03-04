@@ -33,8 +33,8 @@ library(ggVennDiagram)
 ```{r,echo=FALSE,include=FALSE}
 #import previous search result
 
-disease_data<-readRDS("data/search_result/gwas_list.RDS")
-HPA_data<-readRDS('data/search_result/HPA_data.RDS')
+disease_data<-readRDS("data/search_result/gwas_list_FTD.RDS")
+HPA_data<-readRDS('data/search_result/HPA_data_FTD.RDS')
 
 #import UMAP data and classification
 UMAP_data<-read.delim('data/UMAP_and_cluster.txt',sep = "\t", header=TRUE)
@@ -127,27 +127,6 @@ $$
 
 -   In the lollipop plots, each dot is a cluster. The x-axis shows fold enrichment and the y-axis shows the cluster label. Orange dots indicate significantly enriched clusters (p \< 0.05). Note that since this pipeline is initially designed for HPA brain section/brain related diseases, genes not found in the HPA brain section database are excluded from further analysis.
 
-```{r eval=FALSE, include=FALSE}
-fisher_result_tissue<-(run_fisher_test(
-  cluster_column ="UMAP.Cluster.tissue",
-  p_threshold = 0.05,cluster_type = 'Tissue'
-))
-
-fisher_result_SC<-(run_fisher_test(
-  cluster_column = "UMAP.Cluster.singlecell",
-  p_threshold = 0.01,cluster_type = 'SingleCell'
-))
-
-fisher_result_brain<-(run_fisher_test(
-  cluster_column = "UMAP.Cluster.brain",cluster_type = 'Brain',
-  p_threshold = 1
-))
-#inspect significant cluster
-print(fisher_result_tissue)
-print(fisher_result_SC)
-print(fisher_result_brain)
-```
-
 ```{r include=FALSE}
 #calculate fold enrichement
 total_genes <- length(UMAP_data$gene)
@@ -168,6 +147,7 @@ fisher_result_brain<-(run_fisher_test(
   p_threshold = 1
 ))
 
+#calculate fold enrichment
 fisher_result_tissue <- fisher_result_tissue %>%
   mutate(
     fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes)
@@ -181,23 +161,57 @@ fisher_result_brain <- fisher_result_brain %>%
     fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes)
   )
 
+#use Benjamini-Hochberg method to adjust p value
+fisher_result_tissue<- fisher_result_tissue %>%
+  mutate(fisher_p_adj = p.adjust(fisher_p, method = "BH"))
+
+##
+fisher_result_SC<- fisher_result_SC%>%
+  mutate(fisher_p_adj = p.adjust(fisher_p, method = "BH"))
+
+##
+fisher_result_brain<- fisher_result_brain %>%
+  mutate(fisher_p_adj = p.adjust(fisher_p, method = "BH"))
+
 ```
 
 ```{r echo=FALSE, fig.height=10, fig.width=9,warning=FALSE}
+#you can adjust p threshold here
 # Plot for fisher_result_tissue
-plot_lollipop(fisher_result = fisher_result_tissue, 
+plot_lollipop(fisher_result = fisher_result_tissue,
+              p_value=fisher_result_tissue$fisher_p,
               p_threshold = 0.05, 
-              title = "Fold Enrichment Across Tissue Clusters")
+              title = "Fold Enrichment Across Tissue Clusters (p_raw<0.05)")
 
 # Plot for fisher_result_SC
 plot_lollipop(fisher_result = fisher_result_SC, 
               p_threshold = 0.05, 
-              title = "Fold Enrichment Across Single Cell Clusters")
+              p_value=fisher_result_SC$fisher_p,
+              title = "Fold Enrichment Across Single Cell Clusters (p_raw<0.05)")
+
 
 # Plot for fisher_result_brain
 plot_lollipop(fisher_result = fisher_result_brain, 
               p_threshold = 0.05, 
-              title = "Fold Enrichment Across Brain Clusters")
+               p_value=fisher_result_brain$fisher_p,
+              title = "Fold Enrichment Across Brain Clusters (p_raw<0.05")
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=9,warning=FALSE}
+plot_lollipop(fisher_result = fisher_result_tissue,
+              p_value =fisher_result_tissue$fisher_p_adj,
+              p_threshold = 0.1, 
+              title = "Fold Enrichment Across Tissue Clusters (p_adj<0.1)")
+
+plot_lollipop(fisher_result = fisher_result_SC, 
+              p_threshold = 0.1, 
+              p_value=fisher_result_SC$fisher_p_adj,
+              title = "Fold Enrichment Across Single Cell Clusters(p_adj<0.1)")
+
+plot_lollipop(fisher_result = fisher_result_brain, 
+              p_threshold = 0.1, 
+               p_value=fisher_result_brain$fisher_p_adj,
+              title = "Fold Enrichment Across Brain Clusters (p_adj<0.1)")
 
 ```
 
@@ -334,6 +348,74 @@ ggplot() +
 
 ```
 
+### 2c. Scattered Plots
+
+```{r}
+print(fisher_result_tissue %>%
+        filter(fisher_p_adj < 0.1))
+
+print(fisher_result_SC %>%
+        filter(fisher_p_adj < 0.1))
+
+print(fisher_result_brain %>%
+  filter(fisher_p_adj < 0.1))
+
+```
+
+```{r,echo=FALSE}
+ggplot(fisher_result_tissue,
+       aes(fold_enrichment, -log(fisher_p_adj))) +
+  
+  geom_point(color = "grey70", alpha = 0.6) +
+  
+  geom_point(data = subset(fisher_result_tissue, fisher_p < 0.05),
+             color = "orange", size = 2) +
+  geom_point(data = subset(fisher_result_tissue, fisher_p_adj < 0.1),
+             color = "red", size = 2) +
+  
+  geom_text(data = subset(fisher_result_tissue, fisher_p < 0.05),
+            aes(label = UMAP.Cluster.tissue),
+            vjust = -0.5,
+            size = 3) +
+   geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
+  ggtitle("Tissue cluster_FTD") 
+
+
+ggplot(fisher_result_SC,
+       aes(fold_enrichment, -log(fisher_p_adj))) +
+  
+  geom_point(color = "grey70", alpha = 0.6) +
+  
+  geom_point(data = subset(fisher_result_SC, fisher_p < 0.05),
+             color = "orange", size = 2) +
+  geom_point(data = subset(fisher_result_SC, fisher_p_adj < 0.1),
+             color = "red", size = 2) +
+  
+  geom_text(data = subset(fisher_result_SC, fisher_p < 0.05),
+            aes(label = UMAP.Cluster.singlecell),
+            vjust = -0.5,
+            size = 3) +
+     geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
+  ggtitle("SC cluster_FTD") 
+
+ggplot(fisher_result_brain,
+       aes(fold_enrichment, -log(fisher_p_adj))) +
+  
+  geom_point(color = "grey70", alpha = 0.6) +
+  
+  geom_point(data = subset(fisher_result_brain, fisher_p < 0.05),
+             color = "orange", size = 2) +
+  geom_point(data = subset(fisher_result_brain, fisher_p_adj < 0.1),
+             color = "red", size = 2) +
+  
+  geom_text(data = subset(fisher_result_brain, fisher_p < 0.05),
+            aes(label = UMAP.Cluster.brain),
+            vjust = -0.5) +
+    geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
+  ggtitle("Brain cluster_FTD") 
+
+```
+
 ## 3. Specificity of Risk Genes
 
 HPA assigns genes to specificity categories that describe how selectively they are expressed across tissues or cell types:
@@ -450,6 +532,7 @@ venn_list <- list(
 )
 
 ```
+
 ```{r,echo=FALSE}
 venn_list <- list(
   "Tissue Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.tissue.specificity %in% c("Tissue enriched", "Group enriched")]),

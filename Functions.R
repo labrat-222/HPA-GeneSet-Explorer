@@ -141,23 +141,23 @@ plot_cluster <- function(data, cluster_column, title=disease_name) {
 }
 
 
-plot_lollipop <- function(fisher_result, p_threshold = 0.05, title = "Fold Enrichment Across Clusters") {
+plot_lollipop <- function(fisher_result,p_value,p_threshold = 0.05, title = "Fold Enrichment Across Clusters") {
   ggplot(data = fisher_result, 
          aes(x = reorder(cluster_name, fold_enrichment), 
              y = fold_enrichment)) +
     # Add lollipop sticks with dynamic color based on significance
     geom_segment(aes(xend = reorder(cluster_name, fold_enrichment), 
                      y = 0, yend = fold_enrichment, 
-                     color = fisher_p < p_threshold), 
+                     color = p_value < p_threshold), 
                  size = 1, show.legend = FALSE) +
     # Add dots with dynamic size and color based on significance
-    geom_point(aes(color = fisher_p < p_threshold, 
-                   size = fisher_p < p_threshold), 
+    geom_point(aes(color = p_value < p_threshold, 
+                   size = p_value < p_threshold), 
                show.legend = FALSE) +
     scale_color_manual(values = c("TRUE" = "orange", "FALSE" = "grey")) +
     scale_size_manual(values = c("TRUE" = 4, "FALSE" = 2)) +
     # Annotate p-values
-    geom_text(aes(label = ifelse(fisher_p < p_threshold, paste0("p=", round(fisher_p, 4)), "")), 
+    geom_text(aes(label = ifelse(p_value < p_threshold, paste0("p=", round(p_value, 4)), "")), 
               hjust = -0.3, vjust = 0, size = 3, color = "black") +
     # Add a reference line
     geom_hline(yintercept = 1, linetype = "dashed", color = "skyblue3") +
