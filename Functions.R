@@ -141,30 +141,37 @@ plot_cluster <- function(data, cluster_column, title=disease_name) {
 }
 
 
-plot_lollipop <- function(fisher_result,p_value,p_threshold = 0.05, title = "Fold Enrichment Across Clusters") {
-  ggplot(data = fisher_result, 
-         aes(x = reorder(cluster_name, fold_enrichment), 
+plot_lollipop <- function(fisher_result, p_value, p_threshold = 0.05, title = "Fold Enrichment Across Clusters") {
+  n          <- nrow(fisher_result)
+  label_size <- max(5, min(10, round(470 / n)))  # scale font to number of rows
+  title_str  <- paste(strwrap(title, width = 55), collapse = "\n")
+
+  ggplot(data = fisher_result,
+         aes(x = reorder(cluster_name, fold_enrichment),
              y = fold_enrichment)) +
-    # Add lollipop sticks with dynamic color based on significance
-    geom_segment(aes(xend = reorder(cluster_name, fold_enrichment), 
-                     y = 0, yend = fold_enrichment, 
-                     color = p_value < p_threshold), 
-                 size = 1, show.legend = FALSE) +
-    # Add dots with dynamic size and color based on significance
-    geom_point(aes(color = p_value < p_threshold, 
-                   size = p_value < p_threshold), 
+    geom_segment(aes(xend = reorder(cluster_name, fold_enrichment),
+                     y = 0, yend = fold_enrichment,
+                     color = p_value < p_threshold),
+                 size = 0.7, show.legend = FALSE) +
+    geom_point(aes(color = p_value < p_threshold,
+                   size  = p_value < p_threshold),
                show.legend = FALSE) +
     scale_color_manual(values = c("TRUE" = "orange", "FALSE" = "grey")) +
-    scale_size_manual(values = c("TRUE" = 4, "FALSE" = 2)) +
-    # Annotate p-values
-    geom_text(aes(label = ifelse(p_value < p_threshold, paste0("p=", round(p_value, 4)), "")), 
-              hjust = -0.3, vjust = 0, size = 3, color = "black") +
-    # Add a reference line
+    scale_size_manual(values  = c("TRUE" = 3,        "FALSE" = 1.5)) +
+    geom_text(aes(label = ifelse(p_value < p_threshold,
+                                 paste0("p=", round(p_value, 4)), "")),
+              hjust = -0.3, vjust = 0, size = 2.5, color = "black") +
     geom_hline(yintercept = 1, linetype = "dashed", color = "skyblue3") +
     coord_flip() +
-    scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-    labs(x = "Cluster Name", y = "Fold Enrichment", title = title) +
-    theme_minimal()
+    scale_y_continuous(expand = expansion(mult = c(0.05, 0.5))) +
+    labs(x = NULL, y = "Fold Enrichment", title = title_str) +
+    theme_minimal(base_size = 8) +
+    theme(
+      axis.text.y  = element_text(size = label_size),
+      plot.title   = element_text(size = 9, lineheight = 1.2),
+      axis.title.x = element_text(size = 8),
+      plot.margin  = margin(4, 8, 4, 2, "pt")
+    )
 }
 
 #plot barplot using list column

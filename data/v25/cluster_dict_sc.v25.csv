@@ -1,0 +1,112 @@
+"Single.cell.expression.cluster","cluster_id"
+"Cluster 1: Enterocytes - Absorption and Digestion",1
+"Cluster 2: Cerebellar granular cells - Neuronal signaling",2
+"Cluster 3: Early primary spermatocytes - Early meiosis",3
+"Cluster 4: Breast lactating luminal cells - Lactation",4
+"Cluster 5: Pancreatic acinar cells - Pancreatic exocrine secretion",5
+"Cluster 6: Plasmacytoid dendritic cells - Viral sensing & interferon response",6
+"Cluster 7: Non-specific - Transcription",7
+"Cluster 8: Non-specific - Secretory pathway",8
+"Cluster 9: T-cells - Adaptive immunity: Regulation",9
+"Cluster 10: Epididymal principal cells - Sperm maturation microenvironment",10
+"Cluster 11: Muller glia cells - Retinal homeostasis",11
+"Cluster 12: Endothelial cells - Angiogenesis & vascular homeostasis",12
+"Cluster 13: Syncytiotrophoblasts - Placental remodeling & endocrine func.",13
+"Cluster 14: Oligodendrocyte progenitor cells - Oligodendrocyte development & myelinatio",14
+"Cluster 15: Non-specific - Protein processing",15
+"Cluster 16: Prostatic glandular cells - Androgen response & seminal fluid",16
+"Cluster 17: Non-specific - RNA processing",17
+"Cluster 18: Adrenal cortex cells - Steroidogensis",18
+"Cluster 19: Cluster 19",19
+"Cluster 20: Cluster 20",20
+"Cluster 21: Extravillous trophoblasts - Placental invasion & endocrine regulatio",21
+"Cluster 22: Cluster 22",22
+"Cluster 23: Elongating spermatids - Sperm cell metabolism & fertilization",23
+"Cluster 24: Neutrophils - Innate immunity signal integration",24
+"Cluster 25: Hepatocytes - Plasma protein synthesis & secretion",25
+"Cluster 26: Keratinocytes - Keratinization",26
+"Cluster 27: Non-specific - Cell proliferation",27
+"Cluster 28: Astrocytes - Homeostasis & neuron support",28
+"Cluster 29: Neutrophils - Innate immune cellular maintenance",29
+"Cluster 30: Epididymal principal cells - Sperm storage microenvironment",30
+"Cluster 31: Neutrophils - Chemotaxis & Apoptosis",31
+"Cluster 32: Endothelial cells - Angiogenesis & vascular immunity",32
+"Cluster 33: Early spermatids - Spermiogenesis: Cap phase",33
+"Cluster 34: Ciliated cells - Cilia assembly & function",34
+"Cluster 35: Neurons - Synaptic function & neurogenesis",35
+"Cluster 36: Skeletal myocytes - Muscle excitation & contraction",36
+"Cluster 37: Neutrophil progenitors - Granulopoiesis",37
+"Cluster 38: Secretory epithelial cells - Exocrine secretion",38
+"Cluster 39: Syncytiotrophoblasts - Placental homeostasis & endocrine signal",39
+"Cluster 40: Monocytes & Neutrophils - Inflammatory signaling",40
+"Cluster 41: Oocytes - Oogenesis",41
+"Cluster 42: Early spermatids - Spermiogenesis: Acrosomal phase",42
+"Cluster 43: Sertoli cells - Spermatogenesis microenvironment",43
+"Cluster 44: Plasma cells - Antibody production & secretion",44
+"Cluster 45: Colonocytes & Enterocytes - Gastrointestinal absorption & barrier",45
+"Cluster 46: Skeletal myocytes - Muscle structure & formation",46
+"Cluster 47: Platelets - Hemostasis",47
+"Cluster 48: Neutrophils - Phagocytosis & degranulation",48
+"Cluster 49: Apical squamous epithelium - Epithelial barrier & keratinization",49
+"Cluster 50: Renal epithelial cells - Ion transport and pH regulation",50
+"Cluster 51: Cluster 51",51
+"Cluster 52: Glandular & Luminal cells - Estrogen-regulated epithelial secretion",52
+"Cluster 53: Late primary spermatocytes - Meiotic division & transition",53
+"Cluster 54: Intestinal epithelial cells - Intestinal epi homeostasis & respiration",54
+"Cluster 55: Myocytes - Oxidative muscle function",55
+"Cluster 56: Late spermatids - Spermiogenesis: Maturation",56
+"Cluster 57: Podocytes - Glomerular filtration",57
+"Cluster 58: Mast cells - Allergic inflammatory responses",58
+"Cluster 59: Pituitary endocrine cells - Neuroendocrine signaling",59
+"Cluster 60: Cardiomyocytes - Cardiac muscle contraction & structure",60
+"Cluster 61: Schwann cells & Melanocytes - Mixed function",61
+"Cluster 62: Smooth muscle cells - Muscle contraction",62
+"Cluster 63: Cluster 63",63
+"Cluster 64: Renal epithelial cells - Ion transport & homeostasis",64
+"Cluster 65: Non-specific - Cell growth & division",65
+"Cluster 66: Cluster 66",66
+"Cluster 67: Plasma cells - Plasma cell differentiation",67
+"Cluster 68: Cluster 68",68
+"Cluster 69: Cluster 69",69
+"Cluster 70: Intestinal goblet cells - Mucin production",70
+"Cluster 71: Non-specific - Cardiac endocrine signaling & maintenanc",71
+"Cluster 72: Macrophages - Phagocytosis & lysosomal degradation",72
+"Cluster 73: Late spermatids - Spermiogenesis: Maturation",73
+"Cluster 74: Microglia - Neuroimmunity & neuroinflammation",74
+"Cluster 75: Non-specific - Chaperones and protein folding",75
+"Cluster 76: Pancreatic endocrine cells - Endocrine signaling",76
+"Cluster 77: Late primary spermatocytes - Spermiogenesis: Golgi Phase",77
+"Cluster 78: Plasma cells - Antibody production & ER-stress response",78
+"Cluster 79: Photoreceptor cells - Phototransduction",79
+"Cluster 80: Oligodendrocytes - Myelination",80
+"Cluster 81: Alveolar cells - Lung function",81
+"Cluster 82: Dendritic cells - Antigen presentation",82
+"Cluster 83: Cluster 83",83
+"Cluster 84: Apical squamous epithelium - Cornification",84
+"Cluster 85: Squamous epithelial cells - Keratinization",85
+"Cluster 86: Retinal bipolar cells - Synaptic signal transduction",86
+"Cluster 87: B-cells - Adaptive immunity: Humoral response",87
+"Cluster 88: Proximal tubular cells - Transmembrane transport",88
+"Cluster 89: Adipocytes - Lipid metabolism",89
+"Cluster 90: Elongating spermatids - Spermiogenesis: Elongation",90
+"Cluster 91: Pituicytes/FSC - Homeostasis & neuron support",91
+"Cluster 92: NK-cells & T-cells - Adaptive immunity: Cytotoxicity",92
+"Cluster 93: Hepatocytes - Bile production & excretion",93
+"Cluster 94: Gonadal somatic cells - Mixed function",94
+"Cluster 95: Cluster 95",95
+"Cluster 96: Enteroendocrine cells - Neuropeptide signaling",96
+"Cluster 97: Non-specific - Cellular respiration",97
+"Cluster 98: Cluster 98",98
+"Cluster 99: Retinal pigment epithelial cells - Retinol metabolism",99
+"Cluster 100: Stratified epithelial cells - Barrier functions",100
+"Cluster 101: Choroid plexus epithelial cells - Ion transport",101
+"Cluster 102: Non-specific - Mixed function",102
+"Cluster 103: Non-specific - Basic cellular processes",103
+"Cluster 104: Brain endothelial cells - Blood brain barrier",104
+"Cluster 105: Non-specific - Mixed function",105
+"Cluster 106: Spermatogonia - Spermatogonial differentiation",106
+"Cluster 107: Ciliated cells - Cilia assembly & function",107
+"Cluster 108: Fibroblasts - ECM organization",108
+"Cluster 109: Neurons - Neuronal signaling",109
+"Cluster 110: Mural cells - ECM organization",110
+"",NA

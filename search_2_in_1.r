@@ -76,9 +76,15 @@ head(gene_list)
 dim(gene_list)
 
 ########## Database search in HPA ##########
-#choose which version of HPA to search
-#path <- "https://www.proteinatlas.org/api/search_download.php"
-path<-'https://v24.proteinatlas.org/api/search_download.php'
+# Set HPA version here. Change this line to switch versions.
+# Options: "v24", "v25", "latest" (latest = always newest)
+HPA_VERSION <- "v24"
+
+path <- if (HPA_VERSION == "latest") {
+  "https://www.proteinatlas.org/api/search_download.php"
+} else {
+  paste0("https://", HPA_VERSION, ".proteinatlas.org/api/search_download.php")
+}
 
 
 search_queries <- unique(gene_list$ensembl_id)

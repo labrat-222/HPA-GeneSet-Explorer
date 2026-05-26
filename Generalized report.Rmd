@@ -10,8 +10,9 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 source("Functions.R")
+
 #library(hrbrthemes)
 library(viridis)
 library(umap)
@@ -30,105 +31,128 @@ library(ggvenn)
 library(ggVennDiagram)
 ```
 
-```{r,echo=FALSE,include=FALSE}
+```{r,include=FALSE}
 #import previous search result
 
 disease_data<-readRDS("data/search_result/gwas_list_FTD.RDS")
 HPA_data<-readRDS('data/search_result/HPA_data_FTD.RDS')
 
+# Auto-detect HPA version from metadata stored during search
+.hpa_url    <- attr(HPA_data, "HPA_version")
+.hpa_raw    <- sub("https://(.*?)\\.proteinatlas.*", "\\1", .hpa_url)
+HPA_VERSION <- if (.hpa_raw == "www") "latest" else .hpa_raw
+hpa_dir     <- paste0("data/", HPA_VERSION, "/")
+
 #import UMAP data and classification
-UMAP_data<-read.delim('data/UMAP_and_cluster.txt',sep = "\t", header=TRUE)
-HPA_classification<-read.table('data/HPA_classification.xls',sep = "\t", header=TRUE)
-HPA_classification_SC<-read.table('data/HPA_classification_SC.xls',sep = "\t", header=TRUE)
+UMAP_data<-read.delim(paste0(hpa_dir,'UMAP_and_cluster.',HPA_VERSION,'.txt'),sep = "\t", header=TRUE)
+hpa_class_file    <- paste0(hpa_dir, 'HPA_classification.',    HPA_VERSION, '.csv')
+hpa_class_sc_file <- paste0(hpa_dir, 'HPA_classification_SC.', HPA_VERSION, '.csv')
+hpa_class_available <- file.exists(hpa_class_file) && file.exists(hpa_class_sc_file)
+
+if (hpa_class_available) {
+  HPA_classification    <- read.csv(hpa_class_file)
+  HPA_classification_SC <- read.csv(hpa_class_sc_file)
+} else {
+  HPA_classification    <- NULL
+  HPA_classification_SC <- NULL
+}
 
 #read dictionary
-cluster_dict_brain<-read.csv('data/cluster_dict_brain.csv')
-cluster_dict_sc<-read.csv("data/cluster_dict_sc.csv")
-cluster_dict_tissue<-read.csv("data/cluster_dict_tissue.csv")
-
-#other UMAP coord
-#UMAP_coord<-fread('/Users/labrat/Downloads/expression_cluster.tsv')
+cluster_dict_brain<-read.csv(paste0(hpa_dir,'cluster_dict_brain.',HPA_VERSION,'.csv'))
+cluster_dict_sc<-read.csv(paste0(hpa_dir,'cluster_dict_sc.',HPA_VERSION,'.csv'))
+cluster_dict_tissue<-read.csv(paste0(hpa_dir,'cluster_dict_tissue.',HPA_VERSION,'.csv'))
 ```
 
-```{r,echo=FALSE,include=FALSE}
-colnames(disease_data)
-identifier<- "ensembl_id" #assign the indentifier column (id) from disease dataset
-#merge gene list and UMAP
+```{r,include=FALSE}
+identifier<- "ensembl_id"
 new_data <- merge(UMAP_data, disease_data, by.x = "gene", by.y = identifier)
-#merge HPA and new_data
 new_data<- merge(new_data,HPA_data, by.x = "gene", by.y = 'Ensembl')
 
 new_data_filt<-new_data%>%group_by(gene) %>%
-  #filter(beta_number == max(beta_number, na.rm = TRUE)) %>%
-  slice(1) %>%  # In case of ties, keep the first occurrence
+  slice(1) %>%
   ungroup()
 
-#merge two HPA data
-HPA_classification<-merge(HPA_classification,HPA_classification_SC,by = "ENSG")
+if (hpa_class_available) {
+  HPA_classification <- merge(HPA_classification, HPA_classification_SC, by = "ENSG")
+}
 ```
 
-This report is generated automatically from the GWAS and Human Protein Atlas (HPA) analysis pipeline.
+This report is generated automatically by the **HPA GeneSet Explorer** pipeline. It maps GWAS-derived risk genes onto the Human Protein Atlas (HPA) to identify which cell types, tissues, and brain regions show significant enrichment of disease-associated gene expression.
 
-It is meant as: - a **reference** for what the code can do, and\
-- a **summary** of the main results for a given disease or trait.
+The pipeline proceeds in three steps:
 
-The report assumes that:
+1. Risk genes are retrieved from the **GWAS Catalog** using trait-specific EFO identifiers.
+2. Gene expression and cluster assignments are retrieved from the **Human Protein Atlas (HPA)**.
+3. Over-representation analysis and specificity profiling are performed to identify biologically relevant patterns.
 
-\- risk genes were retrieved from the **GWAS Catalog**, expression and cluster information were retrieved from **HPA** ( can be done through the searching script), and\
-- enrichment and specificity analyses were run using the provided scripts.
+---
 
-Full datasets can be found in the exported file for further investigation.
+## 0. Search Parameters
 
-## 0. Input and Search Terms
-
-This section lists the key inputs used to generate this report: EFO terms used for GWAS risk gene retrieval; Date of the GWAS search; Human Protein Atlas (HPA) version used for expression data.
-
-```{r, echo=FALSE}
-attr(disease_data,"search_efo_meta")
-attr(disease_data,"search_date")
-attr(HPA_data,"HPA_version")
+```{r}
+meta <- attr(disease_data, "search_efo_meta")
+df_traits <- data.frame(
+  "#"       = seq_len(nrow(meta)),
+  "Trait"   = meta$trait,
+  "EFO ID"  = meta$efo_id,
+  check.names = FALSE
+)
+knitr::kable(df_traits, align = c("c", "l", "l"))
 ```
 
-## 1. Summary of statistic
+```{r, results='asis'}
+gwas_date <- attr(disease_data, "search_date")
+hpa_date  <- attr(HPA_data,     "search_date")
+cat(paste0("**GWAS search date:** ",
+  if (!is.null(gwas_date)) format(gwas_date, "%Y-%m-%d %H:%M:%S") else "N/A", "  \n"))
+cat(paste0("**HPA version:** ", HPA_VERSION, "  \n"))
+cat(paste0("**HPA search date:** ",
+  if (!is.null(hpa_date)) format(hpa_date, "%Y-%m-%d %H:%M:%S") else "N/A", "  \n"))
+cat(paste0("*(Source: ", attr(HPA_data, "HPA_version"), ")*\n"))
+```
+
+## 1. Summary of Statistics
 
 This section gives a quick overview of how many risk genes were identified, how many were found in HPA, and how many could be mapped onto the brain expression UMAP.
 
-```{r,echo=FALSE}
- cat(
-   "Total genes in gene list:", length(unique(disease_data$ensembl_id)), "\n",
-     "Risk genes found in HPA:", length(unique(HPA_data$Ensembl)),"\n",
-     "Risk genes that can be mapped in brain UMAP:", nrow(new_data_filt),"\n"
-     )
+```{r}
+df_stats <- data.frame(
+  "Description" = c(
+    "Total genes in GWAS gene list",
+    "Risk genes found in HPA",
+    "Risk genes mappable to brain UMAP"
+  ),
+  "Count" = c(
+    length(unique(disease_data$ensembl_id)),
+    length(unique(HPA_data$Ensembl)),
+    nrow(new_data_filt)
+  ),
+  check.names = FALSE
+)
+knitr::kable(df_stats, align = c("l", "r"))
 ```
 
-## 2. What clusters do risk gene enrich?
+## 2. Cluster Enrichment Analysis
 
-### 2a. Perform Over-representation analysis (ORA) using fisher's exact test to see enriched clusters.
+HPA organises genes into expression clusters using UMAP-based dimensionality reduction. Each cluster groups genes with similar expression patterns across tissues, single-cell types, or brain regions. This section asks: **are disease risk genes over-represented in specific clusters?**
 
--An over-representation analysis is used to determine which clusters are significantly enriched. Then, fold enrichment score for each cluster is calculated. **Fold Enrichment** measures how much the observed overlap exceeds random expectation. It is calculated as:
+### 2a. Over-representation analysis (ORA) using Fisher's exact test
 
-$$
-\text{Fold Enrichment} = \frac{\text{Observed Overlap}}{\text{Expected Overlap}}
-$$
-
-Where:
+For each cluster, we test whether risk genes occur more often than expected by chance using Fisher's exact test. We then quantify enrichment using the **Fold Enrichment** score:
 
 $$
-\text{Expected Overlap} = \frac{\text{Risk Genes} \times \text{Cluster Size}}{\text{Total Genes}}
+\text{Fold Enrichment} = \frac{\text{Observed Overlap}}{\text{Expected Overlap}}, \quad \text{where} \quad \text{Expected Overlap} = \frac{\text{Risk Genes} \times \text{Cluster Size}}{\text{Total Genes}}
 $$
 
--   **Fold Enrichment \> 1**: Indicates enrichment.
+- **Fold Enrichment > 1**: More risk genes in this cluster than expected - enriched.
+- **Fold Enrichment = 1**: No enrichment.
+- **Fold Enrichment < 1**: Fewer risk genes than expected - depleted.
 
--   **Fold Enrichment = 1**: Indicates no enrichment.
+In the lollipop plots below, each dot represents one expression cluster. The x-axis shows fold enrichment and the y-axis shows the cluster label. **Orange dots** indicate clusters with a nominally significant enrichment (raw p < 0.05). Genes not found in the HPA brain expression database are excluded from further analysis.
 
--   **Fold Enrichment \< 1**: Indicates depletion.
-
-    In the lollipop plots below, enriched (p\<0.05) clusters are highlighted in orange. x-axis represents fold enrichment.
-
--   In the lollipop plots, each dot is a cluster. The x-axis shows fold enrichment and the y-axis shows the cluster label. Orange dots indicate significantly enriched clusters (p \< 0.05). Note that since this pipeline is initially designed for HPA brain section/brain related diseases, genes not found in the HPA brain section database are excluded from further analysis.
+#### Raw p-value (p < 0.05)
 
 ```{r include=FALSE}
-#calculate fold enrichement
 total_genes <- length(UMAP_data$gene)
 risk_genes <- length(new_data_filt$gene)
 
@@ -147,126 +171,94 @@ fisher_result_brain<-(run_fisher_test(
   p_threshold = 1
 ))
 
-#calculate fold enrichment
 fisher_result_tissue <- fisher_result_tissue %>%
-  mutate(
-    fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes)
-  )
+  mutate(fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes))
 fisher_result_SC <- fisher_result_SC %>%
-  mutate(
-    fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes)
-  )
+  mutate(fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes))
 fisher_result_brain <- fisher_result_brain %>%
-  mutate(
-    fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes)
-  )
+  mutate(fold_enrichment = overlap / ((risk_genes * cluster_size) / total_genes))
 
-#use Benjamini-Hochberg method to adjust p value
 fisher_result_tissue<- fisher_result_tissue %>%
   mutate(fisher_p_adj = p.adjust(fisher_p, method = "BH"))
-
-##
 fisher_result_SC<- fisher_result_SC%>%
   mutate(fisher_p_adj = p.adjust(fisher_p, method = "BH"))
-
-##
-fisher_result_brain<- fisher_result_brain %>%
+fisher_result_brain <- fisher_result_brain %>%
   mutate(fisher_p_adj = p.adjust(fisher_p, method = "BH"))
-
 ```
 
-```{r echo=FALSE, fig.height=10, fig.width=9,warning=FALSE}
-#you can adjust p threshold here
-# Plot for fisher_result_tissue
-plot_lollipop(fisher_result = fisher_result_tissue,
-              p_value=fisher_result_tissue$fisher_p,
-              p_threshold = 0.05, 
-              title = "Fold Enrichment Across Tissue Clusters (p_raw<0.05)")
-
-# Plot for fisher_result_SC
-plot_lollipop(fisher_result = fisher_result_SC, 
-              p_threshold = 0.05, 
-              p_value=fisher_result_SC$fisher_p,
-              title = "Fold Enrichment Across Single Cell Clusters (p_raw<0.05)")
-
-
-# Plot for fisher_result_brain
-plot_lollipop(fisher_result = fisher_result_brain, 
-              p_threshold = 0.05, 
-               p_value=fisher_result_brain$fisher_p,
-              title = "Fold Enrichment Across Brain Clusters (p_raw<0.05")
+```{r fig.width=9, fig.height=12}
+plot_lollipop(fisher_result_tissue, fisher_result_tissue$fisher_p, 0.05,
+              "Fold Enrichment Across Tissue Clusters (raw p < 0.05)")
 ```
 
-```{r echo=FALSE, fig.height=10, fig.width=9,warning=FALSE}
-plot_lollipop(fisher_result = fisher_result_tissue,
-              p_value =fisher_result_tissue$fisher_p_adj,
-              p_threshold = 0.1, 
-              title = "Fold Enrichment Across Tissue Clusters (p_adj<0.1)")
-
-plot_lollipop(fisher_result = fisher_result_SC, 
-              p_threshold = 0.1, 
-              p_value=fisher_result_SC$fisher_p_adj,
-              title = "Fold Enrichment Across Single Cell Clusters(p_adj<0.1)")
-
-plot_lollipop(fisher_result = fisher_result_brain, 
-              p_threshold = 0.1, 
-               p_value=fisher_result_brain$fisher_p_adj,
-              title = "Fold Enrichment Across Brain Clusters (p_adj<0.1)")
-
+```{r fig.width=9, fig.height=12}
+plot_lollipop(fisher_result_SC, fisher_result_SC$fisher_p, 0.05,
+              "Fold Enrichment Across Single Cell Clusters (raw p < 0.05)")
 ```
 
-### 2b. Visualization of enriched clusters
+```{r fig.width=9, fig.height=12}
+plot_lollipop(fisher_result_brain, fisher_result_brain$fisher_p, 0.05,
+              "Fold Enrichment Across Brain Clusters (raw p < 0.05)")
+```
 
-The UMAP plots below show:
+#### After Benjamini-Hochberg (BH) multiple testing correction (adjusted p < 0.1)
 
--   All genes (grey)
--   Genes in enriched clusters (colored)
--   Risk genes within enriched clusters (cyan triangles)
+Because many clusters are tested simultaneously, we apply the Benjamini-Hochberg (BH) procedure to control the false discovery rate (FDR). The adjusted p-value threshold used here is 0.1, meaning we accept that up to 10% of flagged clusters may be false positives. Clusters passing this stricter threshold are considered more robustly enriched.
 
-These plots highlight where risk genes concentrate in transcriptomic space.
+```{r fig.width=9, fig.height=12}
+plot_lollipop(fisher_result_tissue, fisher_result_tissue$fisher_p_adj, 0.1,
+              "Fold Enrichment Across Tissue Clusters (BH-adjusted p < 0.1)")
+```
 
-```{r,echo=FALSE,fig.width=10,fig.height=6}
-#Tissue clusters
-UMAP_data_tissue<-read.csv('data/umap_data/umap_tissue_data.v24.1.csv', header=TRUE)
+```{r fig.width=9, fig.height=12}
+plot_lollipop(fisher_result_SC, fisher_result_SC$fisher_p_adj, 0.1,
+              "Fold Enrichment Across Single Cell Clusters (BH-adjusted p < 0.1)")
+```
+
+```{r fig.width=9, fig.height=12}
+plot_lollipop(fisher_result_brain, fisher_result_brain$fisher_p_adj, 0.1,
+              "Fold Enrichment Across Brain Clusters (BH-adjusted p < 0.1)")
+```
+
+### 2b. UMAP visualisation of enriched clusters
+
+Each point in the UMAP plots below represents one gene, positioned according to its global expression pattern. Genes with similar expression profiles cluster together in this two-dimensional space.
+
+- **Grey points**: all genes in the HPA database
+- **Coloured points**: genes belonging to clusters significantly enriched for risk genes (raw p < 0.05)
+- **Cyan triangles**: risk genes located within enriched clusters
+
+```{r,fig.width=10,fig.height=6}
+UMAP_data_tissue<-read.csv(paste0(hpa_dir,'umap_tissue_data.',HPA_VERSION,'.csv'), header=TRUE)
 
 significant_clusters <- fisher_result_tissue %>%
   filter(fisher_p < 0.05) %>%
   pull(UMAP.Cluster.tissue)
 
-
 UMAP_data_tissue_with_enrichment <- UMAP_data_tissue %>%
   left_join(fisher_result_tissue %>% filter(fisher_p < 0.05) %>% select(UMAP.Cluster.tissue, fold_enrichment),
             by = c("cluster_no" = "UMAP.Cluster.tissue"))
 ggplot() +
-  # Base layer
   geom_point(data = UMAP_data_tissue_with_enrichment,
              aes(x = x, y = y),
              size = 1.3, alpha = 0.4, shape = 16, color = "lightgrey") +
-  
-  # Highlight enriched clusters
   geom_point(data = UMAP_data_tissue_with_enrichment %>%
                filter(cluster_no %in% significant_clusters),
              aes(x = x, y = y,
                  color = paste0("Cluster ", cluster_no, ": ", location_name)),
              size = 1.3, shape = 16) +
-  
-  # Highlight risk genes
   geom_point(data = UMAP_data_tissue_with_enrichment %>%
                filter(ensembl_gene_id %in% new_data_filt$gene,
                       cluster_no %in% significant_clusters),
              aes(x = x, y = y),
              shape = 24, fill = "cyan3", size = 1.3, stroke = 0.7) +
-
   scale_color_discrete(name = "Enriched clusters") +
-  
   theme_void() +
-  labs(title = "UMAP Plot (Tissue v24.1): Enriched clusters with risk genes")
-
+  labs(title = paste0("UMAP - Tissue expression (HPA ", HPA_VERSION, ")"))
 ```
 
-```{r,echo=FALSE,fig.width=10,fig.height=6}
-# Single-cell clusters
-UMAP_data_SC <- read.csv("data/umap_data/umap_singlecell_data.v24.1.csv", header = TRUE)
+```{r,fig.width=10,fig.height=6}
+UMAP_data_SC <- read.csv(paste0(hpa_dir,'umap_singlecell_data.',HPA_VERSION,'.csv'), header = TRUE)
 
 significant_clusters_SC <- fisher_result_SC %>%
   filter(fisher_p < 0.05) %>%
@@ -281,34 +273,26 @@ UMAP_data_SC_with_enrichment <- UMAP_data_SC %>%
   )
 
 ggplot() +
-  # Base layer
   geom_point(data = UMAP_data_SC_with_enrichment,
              aes(x = x, y = y),
              size = 1.3, alpha = 0.4, shape = 16, color = "lightgrey") +
-  
-  # Highlight enriched clusters
   geom_point(data = UMAP_data_SC_with_enrichment %>%
                filter(cluster_no %in% significant_clusters_SC),
              aes(x = x, y = y,
                  color = paste0("Cluster ", cluster_no, ": ", location_name)),
              size = 1.3, shape = 16) +
-  
-  # Highlight risk genes
   geom_point(data = UMAP_data_SC_with_enrichment %>%
                filter(ensembl_gene_id %in% new_data_filt$gene,
                       cluster_no %in% significant_clusters_SC),
              aes(x = x, y = y),
              shape = 24, fill = "cyan3", size = 1.3, stroke = 0.7) +
-  
   scale_color_discrete(name = "Enriched clusters") +
   theme_void() +
-  labs(title = "UMAP Plot (Single-cell v24.1): Enriched clusters with risk genes")
-
+  labs(title = paste0("UMAP - Single-cell expression (HPA ", HPA_VERSION, ")"))
 ```
 
-```{r,echo=FALSE}
-# Brain clusters
-UMAP_data_brain <- read.csv("data/umap_data/umap_brain_data.v24.1.csv", header = TRUE)
+```{r,fig.width=10,fig.height=6}
+UMAP_data_brain <- read.csv(paste0(hpa_dir,'umap_brain_data.',HPA_VERSION,'.csv'), header = TRUE)
 
 significant_clusters_brain <- fisher_result_brain %>%
   filter(fisher_p < 0.05) %>%
@@ -323,118 +307,111 @@ UMAP_data_brain_with_enrichment <- UMAP_data_brain %>%
   )
 
 ggplot() +
-  # Base layer
   geom_point(data = UMAP_data_brain_with_enrichment,
              aes(x = x, y = y),
              size = 1.3, alpha = 0.4, shape = 16, color = "lightgrey") +
-  
-  # Highlight enriched clusters
   geom_point(data = UMAP_data_brain_with_enrichment %>%
                filter(cluster_no %in% significant_clusters_brain),
              aes(x = x, y = y,
                  color = paste0("Cluster ", cluster_no, ": ", location_name)),
              size = 1.3, shape = 16) +
-  
-  # Highlight risk genes
   geom_point(data = UMAP_data_brain_with_enrichment %>%
                filter(ensembl_gene_id %in% new_data_filt$gene,
                       cluster_no %in% significant_clusters_brain),
              aes(x = x, y = y),
              shape = 24, fill = "cyan3", size = 1.3, stroke = 0.7) +
-  
   scale_color_discrete(name = "Enriched clusters") +
   theme_void() +
-  labs(title = "UMAP Plot (Brain v24.1): Enriched clusters with risk genes")
-
+  labs(title = paste0("UMAP - Brain expression (HPA ", HPA_VERSION, ")"))
 ```
 
-### 2c. Scattered Plots
+### 2c. Volcano Plots
+
+The volcano plots below provide a complementary view of the enrichment results. Each point is one cluster. The x-axis shows fold enrichment and the y-axis shows statistical significance (-log of BH-adjusted p-value). Points further right are more enriched; points higher up are more significant.
+
+- **Grey**: not significant at raw p < 0.05
+- **Orange**: significant at raw p < 0.05
+- **Red**: significant after BH correction (adjusted p < 0.1)
+- **Dashed line**: fold enrichment = 1 (no enrichment)
+
+The table below each plot lists the clusters that passed BH-adjusted p < 0.1.
 
 ```{r}
-print(fisher_result_tissue %>%
-        filter(fisher_p_adj < 0.1))
+disease_label <- attr(disease_data, "search_efo_meta")$trait[1]
 
-print(fisher_result_SC %>%
-        filter(fisher_p_adj < 0.1))
-
-print(fisher_result_brain %>%
-  filter(fisher_p_adj < 0.1))
-
-```
-
-```{r,echo=FALSE}
-ggplot(fisher_result_tissue,
-       aes(fold_enrichment, -log(fisher_p_adj))) +
-  
+ggplot(fisher_result_tissue, aes(fold_enrichment, -log(fisher_p_adj))) +
   geom_point(color = "grey70", alpha = 0.6) +
-  
-  geom_point(data = subset(fisher_result_tissue, fisher_p < 0.05),
-             color = "orange", size = 2) +
-  geom_point(data = subset(fisher_result_tissue, fisher_p_adj < 0.1),
-             color = "red", size = 2) +
-  
+  geom_point(data = subset(fisher_result_tissue, fisher_p < 0.05), color = "orange", size = 2) +
+  geom_point(data = subset(fisher_result_tissue, fisher_p_adj < 0.1), color = "red", size = 2) +
   geom_text(data = subset(fisher_result_tissue, fisher_p < 0.05),
-            aes(label = UMAP.Cluster.tissue),
-            vjust = -0.5,
-            size = 3) +
-   geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
-  ggtitle("Tissue cluster_FTD") 
+            aes(label = UMAP.Cluster.tissue), vjust = -0.5, size = 3) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
+  labs(title = paste0("Tissue clusters - ", disease_label),
+       x = "Fold Enrichment", y = "-log(BH-adjusted p-value)")
 
+print(fisher_result_tissue %>% filter(fisher_p_adj < 0.1))
 
-ggplot(fisher_result_SC,
-       aes(fold_enrichment, -log(fisher_p_adj))) +
-  
+ggplot(fisher_result_SC, aes(fold_enrichment, -log(fisher_p_adj))) +
   geom_point(color = "grey70", alpha = 0.6) +
-  
-  geom_point(data = subset(fisher_result_SC, fisher_p < 0.05),
-             color = "orange", size = 2) +
-  geom_point(data = subset(fisher_result_SC, fisher_p_adj < 0.1),
-             color = "red", size = 2) +
-  
+  geom_point(data = subset(fisher_result_SC, fisher_p < 0.05), color = "orange", size = 2) +
+  geom_point(data = subset(fisher_result_SC, fisher_p_adj < 0.1), color = "red", size = 2) +
   geom_text(data = subset(fisher_result_SC, fisher_p < 0.05),
-            aes(label = UMAP.Cluster.singlecell),
-            vjust = -0.5,
-            size = 3) +
-     geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
-  ggtitle("SC cluster_FTD") 
+            aes(label = UMAP.Cluster.singlecell), vjust = -0.5, size = 3) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
+  labs(title = paste0("Single-cell clusters - ", disease_label),
+       x = "Fold Enrichment", y = "-log(BH-adjusted p-value)")
 
-ggplot(fisher_result_brain,
-       aes(fold_enrichment, -log(fisher_p_adj))) +
-  
+print(fisher_result_SC %>% filter(fisher_p_adj < 0.1))
+
+ggplot(fisher_result_brain, aes(fold_enrichment, -log(fisher_p_adj))) +
   geom_point(color = "grey70", alpha = 0.6) +
-  
-  geom_point(data = subset(fisher_result_brain, fisher_p < 0.05),
-             color = "orange", size = 2) +
-  geom_point(data = subset(fisher_result_brain, fisher_p_adj < 0.1),
-             color = "red", size = 2) +
-  
+  geom_point(data = subset(fisher_result_brain, fisher_p < 0.05), color = "orange", size = 2) +
+  geom_point(data = subset(fisher_result_brain, fisher_p_adj < 0.1), color = "red", size = 2) +
   geom_text(data = subset(fisher_result_brain, fisher_p < 0.05),
-            aes(label = UMAP.Cluster.brain),
-            vjust = -0.5) +
-    geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
-  ggtitle("Brain cluster_FTD") 
+            aes(label = UMAP.Cluster.brain), vjust = -0.5) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "skyblue3") +
+  labs(title = paste0("Brain clusters - ", disease_label),
+       x = "Fold Enrichment", y = "-log(BH-adjusted p-value)")
 
+print(fisher_result_brain %>% filter(fisher_p_adj < 0.1))
 ```
 
-## 3. Specificity of Risk Genes
+## 3. Expression Specificity of Risk Genes
 
-HPA assigns genes to specificity categories that describe how selectively they are expressed across tissues or cell types:
+Beyond cluster enrichment, we examine how selectively risk genes are expressed. The Human Protein Atlas classifies each gene into specificity categories based on how its expression compares across tissues or cell types.
 
--   **Tissue/Cell-type Enriched** genes shows markedly higher expression in one tissue or cell type compared to all others
+**Elevated expression categories** (source: https://www.proteinatlas.org/humanproteome/tissue/tissue+specific):
 
--   **Group enriched genes** displayed elevated expression in a small group of related tissues or cell types
+| Category | Definition |
+|---|---|
+| **Tissue enriched** | At least 4-fold higher mRNA level in one tissue compared to all others |
+| **Group enriched** | At least 4-fold higher average mRNA level in a group of 2-5 tissues compared to all others |
+| **Tissue enhanced** | At least 4-fold higher mRNA level in one tissue compared to the average of all other tissues |
+| **Low specificity** | Does not meet any of the above thresholds - broadly expressed |
 
--   **Tissue/Cell-typeEnhanced** genes showed increased expression compared to the average across all tissues or cell types
+We examine how risk genes are distributed across these categories in tissues, single-cell types, and brain regions.
 
--   Genes that did not meet these thresholds were considered to have low specificity or broadexpression.
+```{r,results='asis'}
+if (!hpa_class_available) {
+  cat(paste0(
+    "\n> **Data unavailable for HPA ", HPA_VERSION, ":** ",
+    "`HPA_classification.", HPA_VERSION, ".csv` and ",
+    "`HPA_classification_SC.", HPA_VERSION, ".csv` ",
+    "have not yet been added to `data/", HPA_VERSION, "/`. ",
+    "Sections 3a and 3b are skipped. ",
+    "Please add the files and re-run the report.\n"
+  ))
+}
+```
 
-    We examine how risk genes are distributed across these categories in tissues, single-cell types, and brain datasets.
+### 3a. Specificity distribution of risk genes
 
-### 3a. Specificity component of risk genes
+The pie charts below show how risk genes are distributed across specificity categories, across three expression contexts. Each slice corresponds to one specificity class; the percentage indicates the proportion of risk genes in that class.
 
-These plots show how many risk genes fall into each specificity class in different expression contexts.
+**Top row** (from HPA search result): tissue RNA specificity, single-cell type specificity, single-nuclei brain specificity.
+**Bottom row** (from HPA classification file): brain regional, brain domain, brain subregional specificity.
 
-```{r,echo=FALSE,fig.width=10,fig.height=9}
+```{r,fig.width=10,fig.height=9,eval=hpa_class_available}
 risk_list <- new_data_filt$gene
 risk_classification <- HPA_classification[HPA_classification$ENSG %in% risk_list, ]
 
@@ -450,101 +427,88 @@ plot_spec <- function(df, cols){
   for (col in cols) {
     counts <- table(df[[col]])
     perc   <- round(100 * counts / sum(counts), 1)
-    labels <- paste0(names(counts), " (", perc, "%)") 
+    labels <- paste0(names(counts), " (", perc, "%)")
     pie(counts, main = col, col = color_map(names(counts)), labels = labels)
   }
 }
 
-
 par(mfrow = c(3, 2))
 plot_spec(new_data_filt, c("RNA.tissue.specificity","RNA.single.cell.type.specificity","RNA.single.nuclei.brain.specificity"))
 plot_spec(risk_classification, c("Human.brain.regional.RNA.Specificity","Human.brain.domain.RNA.Specificity","Human.brain.subregional.RNA.Specificity"))
-
 ```
 
-### 3b. Detailed component of feature enriched genes (group enriched excluded)
+### 3b. Tissue distribution of tissue-enriched risk genes
 
-```{r echo=FALSE,fig.height=7}
-# Combine and prepare data
+For risk genes classified as "Tissue enriched", this section shows which specific tissues they are enriched in. Each panel corresponds to one expression context. The x-axis shows the tissue name and the y-axis shows the count of risk genes enriched in that tissue. The red label indicates the total number of tissue-enriched genes in each context.
+
+```{r fig.height=7,eval=hpa_class_available}
 combined_data <- bind_rows(
   risk_classification %>%
     filter(Human.brain.regional.RNA.Specificity == "Tissue enriched") %>%
     mutate(Category = "Human Brain Regional enriched", Enrichment_Tissue = Human.brain.regional.Enriched.Enhanced.Tissue),
-  
   risk_classification %>%
     filter(Consensus.RNA.Specificity == "Tissue enriched") %>%
     mutate(Category = "Consensus RNA Tissue enriched", Enrichment_Tissue = Consensus.Enriched.Enhanced.Tissue),
-  
   risk_classification %>%
     filter(Human.brain.domain.RNA.Specificity == "Tissue enriched") %>%
     mutate(Category = "Human Brain Domain enriched", Enrichment_Tissue = Human.brain.domain.Enriched.Enhanced.Tissue),
-  
-   risk_classification %>%
+  risk_classification %>%
     filter(Human.brain.subregional.RNA.Specificity == "Tissue enriched") %>%
     mutate(Category = "Human Brain Subregional enriched", Enrichment_Tissue = Human.brain.subregional.Enriched.Enhanced.Tissue),
-  
   risk_classification %>%
     filter(Single.cell.type.RNA.Specificity == "Tissue enriched") %>%
     mutate(Category = "Single Cell Type enriched", Enrichment_Tissue = Single.cell.type.Enriched.Enhanced.Tissue)
 )
 
-# Calculate total counts for annotation
 total_counts <- combined_data %>%
   group_by(Category) %>%
   summarise(Total = dplyr::n())
 
-
-# Plot with facets in a 2x2 grid
 ggplot(combined_data, aes(x = Enrichment_Tissue)) +
   geom_bar(fill = "steelblue") +
-  #geom_text(stat = "count", aes(label = ..count..), 
-            #vjust = -0.5, size = 3.5, color = "black") +
-  facet_wrap(~Category, scales = "free", ncol = 2) +  # Set 2 columns for a 2x2 grid
-  labs( y = "Count") +
-  geom_text(data = total_counts, 
-            aes(x = -Inf, y = Inf, label = paste("Total count:", Total)), 
+  facet_wrap(~Category, scales = "free", ncol = 2) +
+  labs(y = "Number of risk genes") +
+  geom_text(data = total_counts,
+            aes(x = -Inf, y = Inf, label = paste("Total:", Total)),
             hjust = -0.1, vjust = 1.5, inherit.aes = FALSE, size = 3, color = "red") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 ```
 
-```{r,echo=FALSE}
- library(VennDiagram)
+### 3c. Overlap between enriched gene sets (Venn diagrams)
+
+The Venn diagrams below show how many risk genes are classified as enriched (tissue enriched or group enriched) across multiple expression contexts simultaneously. Overlapping regions indicate genes enriched in more than one context.
+
+**Diagram 1**: overlap across tissue RNA, single-cell type, and single-nuclei brain contexts (from HPA search result).
+
+```{r,fig.width=7,fig.height=5}
+library(VennDiagram)
 
 venn_list <- list(
   "Tissue Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.tissue.specificity %in% c("Tissue enriched", "Group enriched")]),
   "Single Cell Type Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.single.cell.type.specificity %in% c("Cell type enriched", "Group enriched")]),
-  "Single Nuclei (Cell type) Brain Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.single.nuclei.brain.specificity %in% c("Cell type enriched", "Group enriched")])
+  "Single Nuclei Brain Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.single.nuclei.brain.specificity %in% c("Cell type enriched", "Group enriched")])
 )
 
 ggvenn(
-  venn_list, 
+  venn_list,
   fill_color = c("#0073C2FF", "#EFC000FF", "#CD534CFF"),
-  stroke_size = 0.5, set_name_size = 4,text_size = 3
-  )+
-  ggtitle('Venn diagram of enriched genes (feature enriched+group enriched')
-
-venn_list <- list( 
-  "Brain regional" = unique(risk_classification$ENSG[risk_classification$Human.brain.regional.RNA.Specificity%in% c("Tissue enriched", "Group enriched")]),
-  "Brain domain" = unique(risk_classification$ENSG[risk_classification$Human.brain.domain.RNA.Specificity %in% c("Tissue enriched", "Group enriched")]),
-  "Brain subregion" = unique(risk_classification$ENSG[risk_classification$Human.brain.subregional.RNA.Specificity %in% c("Tissue enriched", "Group enriched")])
-)
-
+  stroke_size = 0.5, set_name_size = 4, text_size = 3
+) + ggtitle("Overlap of enriched risk genes across expression contexts")
 ```
 
-```{r,echo=FALSE}
-venn_list <- list(
+**Diagram 2**: overlap across tissue RNA, single-cell type, and brain regional contexts.
+
+```{r,fig.width=7,fig.height=5}
+venn_list2 <- list(
   "Tissue Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.tissue.specificity %in% c("Tissue enriched", "Group enriched")]),
   "Single Cell Type Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.single.cell.type.specificity %in% c("Cell type enriched", "Group enriched")]),
-  "Brain regional Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.brain.regional.specificity%in% c("Region enriched", "Group enriched")])
+  "Brain Regional Enriched" = unique(new_data_filt$gene[new_data_filt$RNA.brain.regional.specificity %in% c("Region enriched", "Group enriched")])
 )
 
 ggvenn(
-  venn_list, 
+  venn_list2,
   fill_color = c("#0073C2FF", "#EFC000FF", "#CD534CFF"),
-  stroke_size = 0.5, set_name_size = 4,text_size = 3
-  )+
-  ggtitle('Venn diagram of enriched genes (feature enriched+group enriched')
-
+  stroke_size = 0.5, set_name_size = 4, text_size = 3
+) + ggtitle("Overlap of enriched risk genes (tissue, single-cell, brain regional)")
 ```
