@@ -220,6 +220,62 @@ plot_boots_hist<- function(cluster.no, bootstrap_df=bootstrap_df, merged_data=me
     theme_minimal()
 }
 
+# Monte Carlo cluster enrichment — single disease
+# n_iter: paper uses 1,000,000; reduced default for faster rendering
+run_mc <- function(fisher_result, cluster_col, n_iter = 10000) {
+  obs   <- fisher_result$overlap
+  sizes <- fisher_result$cluster_size
+  w     <- sizes / sum(sizes)
+  sims  <- rmultinom(n_iter, sum(obs), w)           # n_clusters × n_iter matrix
+  mu    <- rowMeans(sims)
+  sigma <- apply(sims, 1, sd)
+  z     <- (obs - mu) / ifelse(sigma == 0, 1, sigma)
+  p_emp <- sapply(seq_along(obs), function(i)
+    if (obs[i] > mu[i]) mean(sims[i, ] >= obs[i]) else mean(sims[i, ] <= obs[i]))
+  fisher_result %>% mutate(
+    z_score     = z,
+    emp_p       = p_emp,
+    neg_log10_p = -log10(ifelse(p_emp == 0, 1 / (n_iter + 1), p_emp))
+  )
+}
+
+plot_mc_lollipop <- function(mc_result, cluster_col, disease_color, title = "") {
+  sig_thr <- -log10(0.05)   # ≈ 1.3
+  neutral <- "#bebdbe"
+  mc_result <- mc_result %>%
+    arrange(.data[[cluster_col]]) %>%
+    mutate(
+      .y         = seq_len(n()) * 0.7,
+      is_sig_pos = neg_log10_p >= sig_thr & z_score >= 0,
+      pt_size    = ifelse(neg_log10_p >= sig_thr, pmin(neg_log10_p * 1.5, 4), 0.8),
+      pt_color   = ifelse(is_sig_pos, disease_color, neutral)
+    )
+  ggplot(mc_result) +
+    geom_segment(aes(x = 0, xend = z_score, y = .y, yend = .y),
+                 color = neutral, size = 0.5) +
+    geom_segment(data = mc_result[mc_result$is_sig_pos, ],
+                 aes(x = 0, xend = z_score, y = .y, yend = .y),
+                 color = disease_color, size = 1.5, alpha = 0.8) +
+    geom_point(aes(x = z_score, y = .y, size = I(pt_size), color = I(pt_color))) +
+    geom_vline(xintercept = 0,              color = "black", size = 0.8, alpha = 0.3) +
+    geom_vline(xintercept = c(-1.96, 1.96), linetype = "dotted", color = "black", alpha = 0.2) +
+    scale_y_continuous(
+      breaks   = mc_result$.y,
+      labels   = mc_result$cluster_name,
+      position = "right"
+    ) +
+    labs(x = "Enrichment Z-Score", y = NULL, title = title) +
+    theme_bw(base_size = 8) +
+    theme(
+      axis.text.y        = element_text(size = 5),
+      plot.title         = element_text(size = 11, fontface = "bold", color = disease_color),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor   = element_blank(),
+      axis.title.x       = element_text(size = 9),
+      plot.margin        = margin(4, 4, 4, 4, "pt")
+    )
+}
+
 run_fisher_test <- function(
     data = UMAP_data,
     gene_column = "gene",
