@@ -131,7 +131,7 @@ Risk genes are randomly redistributed across clusters 1,000,000 times, weighted 
 | Version | Tissue clusters | Single-cell clusters | Brain clusters | Classification files |
 |---|---|---|---|---|
 | v24 | 83 | 80 | 56 | Included (`data/v24/`) |
-| v25 | 83 | 111 | 57 | Not yet included |
+| v25 | 82 | 110 | 56 | Not yet included |
 
 The pipeline auto-detects the version from HPA search result metadata. Report sections that depend on classification files (3a bottom row, 3b) are skipped automatically when the files are absent, with an inline note.
 

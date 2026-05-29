@@ -12,15 +12,15 @@
 "Cluster 11: Muller glia cells - Retinal homeostasis",11
 "Cluster 12: Endothelial cells - Angiogenesis & vascular homeostasis",12
 "Cluster 13: Syncytiotrophoblasts - Placental remodeling & endocrine func.",13
-"Cluster 14: Oligodendrocyte progenitor cells - Oligodendrocyte development & myelinatio",14
+"Cluster 14: Oligodendrocyte progenitor cells - Development & myelination",14
 "Cluster 15: Non-specific - Protein processing",15
 "Cluster 16: Prostatic glandular cells - Androgen response & seminal fluid",16
 "Cluster 17: Non-specific - RNA processing",17
 "Cluster 18: Adrenal cortex cells - Steroidogensis",18
-"Cluster 19: Cluster 19",19
-"Cluster 20: Cluster 20",20
-"Cluster 21: Extravillous trophoblasts - Placental invasion & endocrine regulatio",21
-"Cluster 22: Cluster 22",22
+"Cluster 19: Cerebellar purkinje cells - Neurotransmission & signaling",19
+"Cluster 20: Non-specific - Transcription regulation",20
+"Cluster 21: Extravillous trophoblasts - Placental invasion & endocrine regulation",21
+"Cluster 22: Non-specific - Basic cellular functions",22
 "Cluster 23: Elongating spermatids - Sperm cell metabolism & fertilization",23
 "Cluster 24: Neutrophils - Innate immunity signal integration",24
 "Cluster 25: Hepatocytes - Plasma protein synthesis & secretion",25
@@ -49,7 +49,7 @@
 "Cluster 48: Neutrophils - Phagocytosis & degranulation",48
 "Cluster 49: Apical squamous epithelium - Epithelial barrier & keratinization",49
 "Cluster 50: Renal epithelial cells - Ion transport and pH regulation",50
-"Cluster 51: Cluster 51",51
+"Cluster 51: Secretory epithelial cells - Mixed function",51
 "Cluster 52: Glandular & Luminal cells - Estrogen-regulated epithelial secretion",52
 "Cluster 53: Late primary spermatocytes - Meiotic division & transition",53
 "Cluster 54: Intestinal epithelial cells - Intestinal epi homeostasis & respiration",54
@@ -61,15 +61,15 @@
 "Cluster 60: Cardiomyocytes - Cardiac muscle contraction & structure",60
 "Cluster 61: Schwann cells & Melanocytes - Mixed function",61
 "Cluster 62: Smooth muscle cells - Muscle contraction",62
-"Cluster 63: Cluster 63",63
+"Cluster 63: Cytotrophoblasts - Basic cellular functions",63
 "Cluster 64: Renal epithelial cells - Ion transport & homeostasis",64
 "Cluster 65: Non-specific - Cell growth & division",65
-"Cluster 66: Cluster 66",66
+"Cluster 66: Erythroid cells - Erythroid differentiation and maturation",66
 "Cluster 67: Plasma cells - Plasma cell differentiation",67
-"Cluster 68: Cluster 68",68
-"Cluster 69: Cluster 69",69
+"Cluster 68: Foveolar cells - Mucosal defense",68
+"Cluster 69: Urothelial cells - Basic cellular functions",69
 "Cluster 70: Intestinal goblet cells - Mucin production",70
-"Cluster 71: Non-specific - Cardiac endocrine signaling & maintenanc",71
+"Cluster 71: Non-specific - Cardiac endocrine signaling & maintenance",71
 "Cluster 72: Macrophages - Phagocytosis & lysosomal degradation",72
 "Cluster 73: Late spermatids - Spermiogenesis: Maturation",73
 "Cluster 74: Microglia - Neuroimmunity & neuroinflammation",74
@@ -81,7 +81,7 @@
 "Cluster 80: Oligodendrocytes - Myelination",80
 "Cluster 81: Alveolar cells - Lung function",81
 "Cluster 82: Dendritic cells - Antigen presentation",82
-"Cluster 83: Cluster 83",83
+"Cluster 83: Epicardial mesothelial cells - Basic cellular functions",83
 "Cluster 84: Apical squamous epithelium - Cornification",84
 "Cluster 85: Squamous epithelial cells - Keratinization",85
 "Cluster 86: Retinal bipolar cells - Synaptic signal transduction",86
@@ -93,10 +93,10 @@
 "Cluster 92: NK-cells & T-cells - Adaptive immunity: Cytotoxicity",92
 "Cluster 93: Hepatocytes - Bile production & excretion",93
 "Cluster 94: Gonadal somatic cells - Mixed function",94
-"Cluster 95: Cluster 95",95
+"Cluster 95: Tuft cells - Chemosensory signaling",95
 "Cluster 96: Enteroendocrine cells - Neuropeptide signaling",96
 "Cluster 97: Non-specific - Cellular respiration",97
-"Cluster 98: Cluster 98",98
+"Cluster 98: Neurons - Neurotransmission & signaling",98
 "Cluster 99: Retinal pigment epithelial cells - Retinol metabolism",99
 "Cluster 100: Stratified epithelial cells - Barrier functions",100
 "Cluster 101: Choroid plexus epithelial cells - Ion transport",101
